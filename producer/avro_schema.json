@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "VitalData",
+  "fields" : [
+    {"name": "patient_id", "type": "string"},
+    {"name": "heartbeat", "type": "int"},
+    {"name": "timestamp", "type": "long"}
+  ]
+}
