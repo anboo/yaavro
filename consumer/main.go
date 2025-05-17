@@ -38,14 +38,13 @@ func main() {
 	config.Version = sarama.V2_8_0_0
 	config.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRange()}
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	config.Consumer.Offsets.AutoCommit.Enable = false
 
 	consumerGroup, err := sarama.NewConsumerGroup(app.KafkaBrokers, groupID, config)
 	if err != nil {
 		log.Fatalf("Error creating consumer group: %v", err)
 	}
-	defer func() {
-		_ = consumerGroup.Close()
-	}()
+	defer func() { _ = consumerGroup.Close() }()
 
 	handler := &AvroConsumer{
 		schemaRegistry: app.SchemaRegistryClient,
@@ -53,7 +52,7 @@ func main() {
 
 	for {
 		if err := consumerGroup.Consume(ctx, []string{app.KafkaTopic}, handler); err != nil {
-			log.Printf("Consumer error: %v", err)
+			slog.Error("Error from consumer", "err", err)
 		}
 		if ctx.Err() != nil {
 			break
@@ -101,7 +100,6 @@ func (c *AvroConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 					}
 					slog.Info("processed", "offset", j.msg.Offset, "data", native)
 
-					// Потокобезопасный offset commit
 					session.MarkMessage(j.msg, "")
 				}
 			}
